@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
+from django.http import Http404
 
 @api_view(['GET', 'POST'])
 def studentsView(request):
@@ -58,3 +59,28 @@ class Employees(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class EmployeeDetail(APIView):
+    def get_object(self, id):
+        try:
+            return Employee.objects.get(id=id)
+        except Employee.DoesNotExist:
+            raise Http404
+        
+    def get(self, request, id):
+        employee = self.get_object(id)
+        serializer = EmployeeSerializer(employee)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def put(self, request, id):
+        employee = self.get_object(id)
+        serializer = EmployeeSerializer(employee, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, id):
+        employee = self.get_object(id)
+        employee.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
